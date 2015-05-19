@@ -4,10 +4,10 @@ class Kitten
   attr_accessor :name
   attr_accessor :laser_strength
 
-  def initialize(name, laser_strength, id)
+  def initialize(name, laser_strength, id = nil)
     @name = name
     @laser_strength = laser_strength.to_i
-    @id = id.to_i
+    @id = id.to_i if id
   end
 
   class << self 
@@ -39,12 +39,21 @@ class Kitten
 
   end
 
-
+  # Does an UPDATE or CREATE based on .... ?
   def save
-    conn = Kitten.establish_connection
-    sql = "UPDATE kittens SET name = '#{name}', laser_strength = #{laser_strength}, updated_at = '#{Time.now}' WHERE id = #{id};"
-    result = conn.exec(sql)
-    result.result_status == PG::PGRES_COMMAND_OK
+    if id
+      conn = Kitten.establish_connection
+      sql = "UPDATE kittens SET name = '#{name}', laser_strength = #{laser_strength}, updated_at = '#{Time.now}' WHERE id = #{id};"
+      result = conn.exec(sql)
+      result.result_status == PG::PGRES_COMMAND_OK
+    else
+      puts "in here"
+      conn = Kitten.establish_connection
+      sql = "INSERT INTO kittens (name, laser_strength, created_at)  VALUES ('#{name}', #{laser_strength}, '#{Time.now}') RETURNING id;"
+      result = conn.exec(sql)
+      @id = result.first['id']
+      result.result_status == PG::PGRES_COMMAND_OK
+    end
   end
 
   
